@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👰 婚禮倒計時減重挑戰</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ivory: #FDF6EE;
+  --blush: #F0C4C4;
+  --blush-deep: #D9879A;
+  --blush-light: #FBF0F0;
+  --gold: #C8972A;
+  --gold-light: #F9EFD6;
+  --gold-pale: #FDF5E0;
+  --sage: #8FAF8F;
+  --sage-light: #EEF5EE;
+  --text: #3A2A2A;
+  --muted: #9A8080;
+  --card: #FFFFFF;
+  --radius: 18px;
+  --p1: #D9879A;
+  --p1-light: #FBF0F0;
+  --p2: #7A9FBF;
+  --p2-light: #EEF5FB;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--ivory);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ─── CONFETTI ─── */
+.confetti-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+.cp { position: absolute; top: -16px; opacity: 0; animation: fall linear forwards; border-radius: 2px; }
+@keyframes fall { 0%{transform:translateY(0)rotate(0);opacity:1}100%{transform:translateY(105vh)rotate(540deg);opacity:0} }
+
+/* ─── HEADER ─── */
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--blush);
+  padding: 22px 20px 18px;
+  text-align: center;
+  position: relative;
+}
+.header-deco { font-size: 1.4rem; letter-spacing: 6px; color: var(--blush-deep); margin-bottom: 4px; }
+.header h1 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; color: var(--text); }
+.header-sub { color: var(--muted); font-size: 0.8rem; margin-top: 4px; letter-spacing: 1px; }
+
+/* ─── TABS ─── */
+.tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--blush); position: sticky; top: 0; z-index: 100; }
+.tab { flex: 1; padding: 12px 4px; text-align: center; cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab.active { color: var(--blush-deep); border-bottom-color: var(--blush-deep); }
+
+/* ─── SCREENS ─── */
+.screen { display: none; padding: 18px; max-width: 600px; margin: 0 auto; }
+.screen.active { display: block; }
+
+/* ─── CARD ─── */
+.card { background: var(--card); border-radius: var(--radius); border: 1px solid #F0E8E8; padding: 18px; margin-bottom: 14px; }
+.card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+
+/* ─── BATTLE BANNER ─── */
+.battle-banner {
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--blush-light) 0%, white 50%, var(--p2-light) 100%);
+  border: 1px solid var(--blush);
+  padding: 20px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+  position: relative;
+}
+.versus-icon { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 1.4rem; background: white; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1px solid #EEE; }
+.fighter { text-align: center; flex: 1; }
+.fighter-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+.fighter-kg { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; line-height: 1; }
+.fighter.p1 .fighter-name, .fighter.p1 .fighter-kg { color: var(--p1); }
+.fighter.p2 .fighter-name, .fighter.p2 .fighter-kg { color: var(--p2); }
+.fighter-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+/* ─── MILESTONES ─── */
+.milestone-row { display: flex; gap: 6px; margin-top: 10px; }
+.ms { flex: 1; text-align: center; padding: 6px 2px; border-radius: 10px; border: 1.5px solid #EEE; font-size: 0.65rem; color: var(--muted); font-weight: 700; background: white; transition: all 0.3s; }
+.ms.reached { border-color: var(--gold); background: var(--gold-pale); color: var(--gold); }
+.ms.p2-reached { border-color: var(--p2); background: var(--p2-light); color: var(--p2); }
+.ms .ms-icon { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+
+/* ─── PROGRESS ─── */
+.prog-wrap { margin-bottom: 12px; }
+.prog-label { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 5px; }
+.prog-track { height: 10px; background: #F5EEEE; border-radius: 99px; overflow: hidden; position: relative; }
+.prog-fill { height: 100%; border-radius: 99px; transition: width 0.9s cubic-bezier(.4,2,.5,1); }
+.prog-fill.p1 { background: linear-gradient(90deg, var(--blush), var(--blush-deep)); }
+.prog-fill.p2 { background: linear-gradient(90deg, #9BC5E0, var(--p2)); }
+
+/* ─── DAY DOTS ─── */
+.day-row { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+.dd { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid #EEE; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; cursor: default; color: var(--muted); background: white; }
+.dd.logged-both { background: var(--sage); border-color: var(--sage); color: white; }
+.dd.logged-one { background: var(--gold-pale); border-color: var(--gold); color: var(--gold); }
+.dd.today { box-shadow: 0 0 0 3px var(--blush); border-color: var(--blush-deep); color: var(--blush-deep); }
+.dd.today.logged-both { background: var(--sage); border-color: var(--sage); color: white; }
+
+/* ─── QUOTE BOX ─── */
+.quote-box {
+  background: var(--gold-pale);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--gold);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.quote-pet { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 2rem; }
+.quote-text { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-style: italic; color: var(--text); padding-right: 44px; }
+.quote-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+/* ─── FORM ─── */
+.form-group { margin-bottom: 13px; }
+label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.5px; }
+input, textarea, select {
+  width: 100%; padding: 9px 13px; border: 1.5px solid #EEE; border-radius: 11px;
+  font-family: 'Noto Sans TC', sans-serif; font-size: 0.88rem; color: var(--text);
+  background: #FAFAFA; outline: none; transition: border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--blush-deep); background: white; }
+textarea { resize: vertical; min-height: 60px; }
+.meal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.meal-cell { background: var(--ivory); border-radius: 12px; padding: 10px; border: 1.5px solid #EEE; }
+.meal-cell label { font-size: 0.72rem; margin-bottom: 4px; }
+.meal-cell textarea { background: transparent; border: none; padding: 2px 0; font-size: 0.82rem; min-height: 65px; }
+.meal-cell textarea:focus { border: none; box-shadow: none; }
+
+.btn { width: 100%; padding: 13px; border: none; border-radius: 12px; font-family: 'Noto Sans TC', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 6px; }
+.btn-blush { background: var(--blush-deep); color: white; }
+.btn-blush:hover { background: #C47088; transform: translateY(-1px); }
+.btn-blue { background: var(--p2); color: white; }
+.btn-blue:hover { background: #6890B0; }
+.btn-gold { background: var(--gold); color: white; }
+.btn-gold:hover { background: #B8821E; }
+
+/* ─── PLAYER TOGGLE ─── */
+.toggle { display: flex; background: var(--ivory); border-radius: 12px; padding: 3px; margin-bottom: 14px; border: 1px solid #EEE; }
+.toggle-btn { flex: 1; padding: 8px; border: none; background: transparent; font-family: 'Noto Sans TC', sans-serif; font-size: 0.85rem; font-weight: 700; border-radius: 10px; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+.toggle-btn.on-p1 { background: var(--p1); color: white; }
+.toggle-btn.on-p2 { background: var(--p2); color: white; }
+
+/* ─── HISTORY ─── */
+.log-item { border-left: 3px solid var(--p1); padding: 12px 14px; background: white; border-radius: 0 12px 12px 0; margin-bottom: 10px; border: 1px solid #F0EEEE; border-left: 3px solid var(--p1); }
+.log-item.p2 { border-left-color: var(--p2); }
+.log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.log-day { font-weight: 800; font-size: 0.82rem; }
+.log-kg { font-size: 0.75rem; padding: 2px 9px; border-radius: 99px; font-weight: 700; }
+.log-item .log-kg { background: var(--blush-light); color: var(--blush-deep); }
+.log-item.p2 .log-kg { background: var(--p2-light); color: var(--p2); }
+.log-row { font-size: 0.77rem; color: #777; margin-top: 3px; }
+.log-row b { color: #555; font-weight: 700; }
+
+/* ─── WEIGH TIME REMINDER ─── */
+.weigh-reminder { background: var(--sage-light); border-radius: 12px; border-left: 3px solid var(--sage); padding: 10px 14px; margin-bottom: 14px; font-size: 0.82rem; color: #4A6A4A; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+/* ─── SETUP ─── */
+.setup-top { text-align: center; padding: 20px 0 16px; }
+.setup-top h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; }
+.setup-top p { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+.prize-tag { display: inline-block; background: var(--gold); color: white; font-weight: 900; padding: 6px 18px; border-radius: 99px; margin-top: 10px; font-size: 0.95rem; }
+.p-setup { border-radius: var(--radius); padding: 15px; margin-bottom: 10px; }
+.p-setup.s1 { background: var(--blush-light); }
+.p-setup.s2 { background: var(--p2-light); }
+.p-setup h3 { font-weight: 800; font-size: 0.92rem; margin-bottom: 12px; }
+.p-setup.s1 h3 { color: var(--p1); }
+.p-setup.s2 h3 { color: var(--p2); }
+
+/* ─── STATS ─── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat { background: white; border-radius: 12px; padding: 10px 6px; text-align: center; border: 1px solid #EEE; }
+.stat .v { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; }
+.stat .l { font-size: 0.65rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.stat.c1 .v { color: var(--p1); }
+.stat.c2 .v { color: var(--p2); }
+.stat.cg .v { color: var(--sage); }
+
+/* ─── MILESTONE POPUP ─── */
+.milestone-popup {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) scale(0.8);
+  background: white; border-radius: 20px; padding: 18px 28px; text-align: center;
+  box-shadow: 0 12px 40px rgba(200,150,150,0.25); border: 2px solid var(--gold);
+  z-index: 9998; opacity: 0; transition: all 0.4s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none; min-width: 220px;
+}
+.milestone-popup.show { opacity: 1; transform: translateX(-50%) scale(1); }
+.mp-icon { font-size: 2.5rem; display: block; margin-bottom: 6px; }
+.mp-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--text); }
+.mp-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+/* ─── TOAST ─── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: rgba(60,40,40,0.9); color: white; padding: 10px 22px; border-radius: 99px; font-size: 0.85rem; font-weight: 700; z-index: 9999; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ─── DIVIDER ─── */
+.section-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 14px 0 10px; display: flex; align-items: center; gap: 8px; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: #EEE; }
+
+/* ─── EMPTY ─── */
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-icon { font-size: 2.8rem; display: block; margin-bottom: 10px; }
+
+/* ─── SYNC BAR ─── */
+.sync-bar { display: flex; align-items: center; justify-content: space-between; background: var(--sage-light); border-radius: 12px; border: 1px solid #C8DEC8; padding: 9px 14px; margin-bottom: 14px; font-size: 0.78rem; }
+.sync-status { display: flex; align-items: center; gap: 6px; font-weight: 700; color: #4A6A4A; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sage); flex-shrink:0; }
+.sync-dot.syncing { background: var(--gold); animation: pulse 1s ease-in-out infinite; }
+.sync-dot.error { background: #D9879A; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.sync-btn { background: var(--sage); color: white; border: none; border-radius: 8px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: 'Noto Sans TC', sans-serif; }
+.sync-btn:hover { background: #7A9F7A; }
+
+/* ─── FIREBASE SETUP ─── */
+.firebase-card { background: #F0F8F0; border: 1.5px dashed var(--sage); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.firebase-card h3 { color: #4A7A4A; font-weight: 800; font-size: 0.9rem; margin-bottom: 10px; }
+.step-list { list-style: none; counter-reset: steps; padding: 0; }
+.step-list li { counter-increment: steps; display: flex; gap: 10px; font-size: 0.8rem; color: #555; margin-bottom: 8px; line-height: 1.5; }
+.step-list li::before { content: counter(steps); min-width: 20px; height: 20px; background: var(--sage); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+.step-list a { color: #4A7A4A; font-weight: 700; }
+
+/* ─── FLORAL DECO ─── */
+.floral { color: var(--blush); font-size: 0.9rem; letter-spacing: 4px; }
+.paw-deco { color: var(--blush); opacity: 0.3; position: absolute; font-size: 0.7rem; }
+
+@media(max-width:400px){
+  .meal-grid{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="confetti-wrap" id="confettiWrap"></div>
+<div class="toast" id="toast"></div>
+<div class="milestone-popup" id="msPopup">
+  <span class="mp-icon" id="mpIcon">🐾</span>
+  <div class="mp-title" id="mpTitle">達成里程碑！</div>
+  <div class="mp-sub" id="mpSub">繼續加油！</div>
+</div>
+
+<div class="header">
+  <div class="header-deco">✦ ✿ ✦</div>
+  <h1>婚禮倒計時減重挑戰</h1>
+  <div class="header-sub">10天 · 目標 3kg · 賭注 2000元</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="go('dashboard')">🏠 戰況</div>
+  <div class="tab" onclick="go('log')">📝 記錄</div>
+  <div class="tab" onclick="go('history')">📖 日誌</div>
+  <div class="tab" onclick="go('setup')">⚙️ 設定</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="screen active" id="screen-dashboard">
+  <div id="db"></div>
+</div>
+
+<!-- LOG -->
+<div class="screen" id="screen-log">
+  <div class="toggle">
+    <button class="toggle-btn on-p1" id="lb1" onclick="setLP(1)">🌸 <span id="ln1">我</span></button>
+    <button class="toggle-btn" id="lb2" onclick="setLP(2)">🌷 <span id="ln2">妹妹</span></button>
+  </div>
+  <div class="weigh-reminder" id="weighReminder">🐾 記得在固定時間量體重唷！</div>
+  <div class="card">
+    <div class="card-title">🌸 填寫日期與體重</div>
+    <div class="form-group"><label>選擇日期</label><input type="date" id="lDate" onchange="refreshLog()"></div>
+    <div id="logDayBadge" style="margin:-6px 0 12px;font-size:0.8rem;color:var(--muted);font-weight:700;"></div>
+    <div class="form-group"><label>⚖️ 今天體重 (kg)</label><input type="number" id="lWt" step="0.1" placeholder="例：57.3"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🍽️ 三餐內容</div>
+    <div class="meal-grid">
+      <div class="meal-cell"><label>🌅 早餐</label><textarea id="lBF" placeholder="吃了什麼…"></textarea></div>
+      <div class="meal-cell"><label>☀️ 午餐</label><textarea id="lL" placeholder="吃了什麼…"></textarea></div>
+      <div class="meal-cell"><label>🌙 晚餐</label><textarea id="lD" placeholder="吃了什麼…"></textarea></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🏃 運動 & 心情</div>
+    <div class="form-group"><label>今天的運動</label><textarea id="lEx" placeholder="走路30分鐘？瑜伽？騎腳踏車？"></textarea></div>
+    <div class="form-group"><label>💬 今日備註</label><textarea id="lNote" placeholder="今天有沒有偷吃？心情如何？🐶" style="min-height:55px"></textarea></div>
+  </div>
+  <button class="btn btn-blush" onclick="saveLog()">🌸 儲存今日紀錄</button>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="screen-history">
+  <div class="toggle">
+    <button class="toggle-btn on-p1" id="hb1" onclick="setHP(1)">🌸 <span id="hn1">我</span></button>
+    <button class="toggle-btn" id="hb2" onclick="setHP(2)">🌷 <span id="hn2">妹妹</span></button>
+  </div>
+  <div id="hist"></div>
+</div>
+
+<!-- SETUP -->
+<div class="screen" id="screen-setup">
+  <div class="setup-top">
+    <div style="font-size:2.5rem;margin-bottom:8px">🐾💒🐾</div>
+    <h2>挑戰設定</h2>
+    <p>填入兩位選手的資料，準備開打！</p>
+    <span class="prize-tag">🏆 獎金 2000 元</span>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 挑戰期間</div>
+    <div class="form-group"><label>開始日期</label><input type="date" id="sDate"></div>
+    <div class="form-group">
+      <label>⚖️ 固定量體重時間</label>
+      <select id="sWeighTime">
+        <option value="早上起床後（空腹）">早上起床後（空腹）🌅 ← 最準確</option>
+        <option value="晚上睡前">晚上睡前 🌙</option>
+        <option value="早上洗澡後">早上洗澡後 🚿</option>
+        <option value="自訂時間">自訂時間</option>
+      </select>
+    </div>
+    <div class="form-group" id="customTimeGroup" style="display:none"><label>自訂時間說明</label><input type="text" id="sCustomTime" placeholder="例：每天飯前"></div>
+  </div>
+  <div class="card">
+    <div class="p-setup s1">
+      <h3>🌸 選手一（我）</h3>
+      <div class="form-group"><label>名字</label><input type="text" id="sN1" placeholder="你的名字"></div>
+      <div class="form-group"><label>起始體重 (kg)</label><input type="number" id="sW1" step="0.1" placeholder="例：58.0"></div>
+      <div class="form-group"><label>作戰策略</label><input type="text" id="sSt1" placeholder="只吃原型食物…"></div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="p-setup s2">
+      <h3>🌷 選手二（妹妹）</h3>
+      <div class="form-group"><label>名字</label><input type="text" id="sN2" placeholder="妹妹的名字"></div>
+      <div class="form-group"><label>起始體重 (kg)</label><input type="number" id="sW2" step="0.1" placeholder="例：55.0"></div>
+      <div class="form-group"><label>作戰策略</label><input type="text" id="sSt2" placeholder="晚餐不吃澱粉…"></div>
+    </div>
+    <button class="btn btn-gold" style="margin-top:14px" onclick="saveSetup()">💾 儲存設定，開始挑戰！</button>
+  </div>
+</div>
+
+<script>
+// ─── MILESTONES ───
+const MS = [
+  { kg: 0.5, icon: '🐾', title: '小爪印！減了 0.5kg！', sub: '貓貓比讚，繼續加油！', color: 'blush' },
+  { kg: 1.0, icon: '🐶', title: '狗狗歡呼！減了 1kg！', sub: '汪！妳超棒的！', color: 'blush' },
+  { kg: 1.5, icon: '🐱', title: '貓貓撒花！減了 1.5kg！', sub: '喵～禮服越來越合了！', color: 'gold' },
+  { kg: 2.0, icon: '💍', title: '指環戴得更好看了！', sub: '減了 2kg！完美進度！', color: 'gold' },
+  { kg: 2.5, icon: '🌸', title: '禮服快要合身了！', sub: '減了 2.5kg！最後衝刺！', color: 'gold' },
+  { kg: 3.0, icon: '👰', title: '完美婚禮身材達成！', sub: '🎊 2000元等妳來拿！', color: 'confetti' },
+];
+const QUOTES = [
+  ['穿上那件禮服，值得一切犧牲。', '每一口少吃的食物，都是給自己的禮物 🌸', '🐶'],
+  ['狗狗說：今天也要加油！', '早餐吃好，午晚克制，妳能做到的 🐾', '🐱'],
+  ['婚禮上最美的人，就是努力過的妳。', '想想那件禮服，放下那塊蛋糕吧 💍', '🌸'],
+  ['貓貓在看著妳，不要偷吃哦！', '2000元還是美食？美食可以吃一天，錢可以買很多次！', '🐶'],
+  ['禮服拉鍊終將一路拉到底。', '每天進步一點點，加起來就是奇蹟 ✨', '🐾'],
+  ['妳們倆都是最棒的！', '競爭讓人進步，友情讓人堅持 💕', '🐱'],
+];
+
+// ─── STATE ───
+// Settings → localStorage (set once, same on both phones)
+// Logs → Google Sheets CSV (read) + Google Form POST (write)
+let S = {
+  p1: { name: '我', startWeight: null, strategy: '只吃原型食物，減少份量' },
+  p2: { name: '妹妹', startWeight: null, strategy: '晚餐不吃澱粉＋每天運動一小時' },
+  startDate: null, weighTime: '早上起床後（空腹）',
+  logs: {}, seenMS: {}
+};
+let GF = {
+  formResponseUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScxHnYU8p6r0sV3Riwu1TISOm3iNf75wnwvotlCYCJr9EhoDw/formResponse',
+  entries: ['entry.340905238','entry.383208861','entry.1118776723','entry.1734029234','entry.1956423706','entry.1292053009','entry.1843556797','entry.550920544'],
+  csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTjHtO6R_Z5LOCnrcMdKzbNPfrS7KzOV04SFxYn6iaDCEm_eNa13LAuenY7cgt3doAcrlRlOYu4EpCp/pub?output=csv'
+};
+let lastSyncTime = null;
+let syncTimer = null;
+
+// ─── LOCAL STORAGE ───
+function saveLocal() {
+  try { localStorage.setItem('wdb_v3', JSON.stringify({ S })); } catch(e) {}
+}
+function loadLocal() {
+  try {
+    const r = localStorage.getItem('wdb_v3');
+    if (r) { const d = JSON.parse(r); if(d.S) S = d.S; }
+  } catch(e) {}
+}
+
+// ─── GOOGLE FORM: WRITE ───
+async function submitToForm(player, date, weight, breakfast, lunch, dinner, exercise, note) {
+  if (!GF.formResponseUrl || GF.entries.length < 8) return;
+  const vals = [player, date, String(weight||''), breakfast, lunch, dinner, exercise, note];
+  const body = new URLSearchParams();
+  GF.entries.forEach((e, i) => body.append(e, vals[i] || ''));
+  try {
+    await fetch(GF.formResponseUrl, { method: 'POST', mode: 'no-cors', body });
+  } catch(e) {}
+}
+
+// ─── GOOGLE SHEETS: READ ───
+function parseCSV(text) {
+  const rows = [];
+  for (const line of text.trim().split('\n')) {
+    if (!line.trim()) continue;
+    const row = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { row.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    row.push(cur.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+async function fetchSheetLogs() {
+  if (!GF.csvUrl) return;
+  setSyncDot('syncing');
+  try {
+    const r = await fetch(GF.csvUrl + (GF.csvUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
+    const text = await r.text();
+    const rows = parseCSV(text).slice(1); // skip header
+    const newLogs = {};
+    for (const row of rows) {
+      // columns: Timestamp, 選手, 日期, 體重, 早餐, 午餐, 晚餐, 運動, 備註
+      const [ts, player, date, weight, breakfast, lunch, dinner, exercise, note] = row;
+      if (!player || !date) continue;
+      const key = `${player}_${date}`;
+      if (!newLogs[key] || ts > newLogs[key]._ts) {
+        newLogs[key] = { weight: parseFloat(weight)||null, breakfast: breakfast||'', lunch: lunch||'', dinner: dinner||'', exercise: exercise||'', note: note||'', _ts: ts };
+      }
+    }
+    // Merge: sheet wins on logs, keep local seenMS
+    S.logs = newLogs;
+    saveLocal();
+    lastSyncTime = new Date(); setSyncDot('ok'); updateSyncBar();
+  } catch(e) { setSyncDot('error'); updateSyncBar(); }
+}
+
+// ─── SYNC UI ───
+function setSyncDot(status) {
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (status==='syncing'?' syncing':status==='error'?' error':'');
+}
+function updateSyncBar() {
+  const lbl = document.getElementById('syncLabel');
+  if (!lbl) return;
+  if (!GF.csvUrl) { lbl.textContent = '未設定 Google 表單同步（去設定頁填入）'; return; }
+  lbl.textContent = lastSyncTime ? `上次同步：${lastSyncTime.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}` : '同步中…';
+}
+async function manualSync() {
+  if (!GF.csvUrl) { toast('Google 表單尚未設定！'); return; }
+  await fetchSheetLogs();
+  renderDB();
+  toast('✅ 同步完成！');
+}
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  if (!GF.csvUrl) return;
+  syncTimer = setInterval(async () => {
+    await fetchSheetLogs();
+    if (document.querySelector('.screen.active')?.id === 'screen-dashboard') renderDB();
+  }, 60000);
+}
+
+// ─── PREFILLED URL PARSER ───
+function parsePrefilledUrl(url) {
+  try {
+    const u = new URL(url);
+    const formId = u.pathname.match(/\/d\/([^/]+)/)?.[1];
+    const entries = [];
+    u.searchParams.forEach((v, k) => { if (k.startsWith('entry.')) entries.push(k); });
+    return (formId && entries.length >= 8) ? { formId, entries } : null;
+  } catch(e) { return null; }
+}
+function parsePrefilledInput() {
+  const val = document.getElementById('sPrefilledUrl').value.trim();
+  const info = document.getElementById('parsedInfo');
+  const result = parsePrefilledUrl(val);
+  if (result) {
+    info.style.display = 'block';
+    info.textContent = `✅ 解析成功！找到 ${result.entries.length} 個欄位，表單 ID：${result.formId.slice(0,20)}…`;
+  } else if (val) {
+    info.style.display = 'block';
+    info.style.background = '#FFF0F0'; info.style.color = '#9A2A2A';
+    info.textContent = '⚠️ 解析失敗，請確認貼上的是「取得預填連結」產生的完整網址';
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+// ─── TABS ───
+function go(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  ['dashboard','log','history','setup'].forEach((t,i) => {
+    if(t===tab) document.querySelectorAll('.tab')[i].classList.add('active');
+  });
+  if(tab==='dashboard') renderDB();
+  if(tab==='log') initLog();
+  if(tab==='history') renderHist();
+  if(tab==='setup') initSetup();
+}
+
+// ─── DASHBOARD ───
+function renderDB() {
+  const el = document.getElementById('db');
+  if (!S.startDate || !S.p1.startWeight || !S.p2.startWeight) {
+    el.innerHTML = `<div class="empty"><span class="empty-icon">🐾</span><p style="font-weight:800;font-size:1rem">先去設定頁完成設定</p><p style="margin-top:6px;font-size:0.85rem">輸入名字、起始體重和挑戰日期</p><button class="btn btn-gold" style="margin-top:16px" onclick="go('setup')">去設定 →</button></div>`;
+    return;
+  }
+  const today = new Date(); const start = new Date(S.startDate);
+  const dayN = Math.max(1, Math.min(10, Math.floor((today-start)/86400000)+1));
+  const end = new Date(start); end.setDate(end.getDate()+9);
+  const dLeft = Math.max(0, Math.ceil((end-today)/86400000));
+  const loss1 = getLoss(1), loss2 = getLoss(2);
+  const pct1 = Math.min(100,(loss1/3)*100), pct2 = Math.min(100,(loss2/3)*100);
+  const lead = loss1>loss2 ? S.p1.name : loss2>loss1 ? S.p2.name : null;
+  const q = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  const syncTime = lastSyncTime ? lastSyncTime.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '—';
+  const syncLabelText = GF.csvUrl ? `上次同步：${syncTime}` : '未設定 Google 表單同步';
+  let dots='';
+  for(let d=1;d<=10;d++){
+    const ds = dateStr(d); const k1=`p1_${ds}`, k2=`p2_${ds}`;
+    const h1=!!S.logs[k1], h2=!!S.logs[k2];
+    const cls = h1&&h2?'logged-both':h1||h2?'logged-one':'';
+    dots+=`<div class="dd ${cls} ${d===dayN?'today':''}" title="第${d}天">${d}</div>`;
+  }
+  const ms1 = renderMSDots(1, loss1);
+  const ms2 = renderMSDots(2, loss2);
+  el.innerHTML = `
+    <div class="sync-bar">
+      <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">${syncLabelText}</span></div>
+      <button class="sync-btn" onclick="manualSync()">↻ 同步</button>
+    </div>
+    <div class="quote-box">
+      <div class="quote-text">${q[0]}</div>
+      <div class="quote-sub">${q[1]}</div>
+      <div class="quote-pet">${q[2]}</div>
+    </div>
+    <div class="battle-banner">
+      <div class="fighter p1">
+        <div class="fighter-name">🌸 ${S.p1.name}</div>
+        <div class="fighter-kg">-${loss1.toFixed(1)}</div>
+        <div class="fighter-sub">kg 減少</div>
+        ${loss1>=3?'<div style="font-size:0.75rem;font-weight:800;color:var(--gold);margin-top:4px">🏆 達成目標！</div>':''}
+      </div>
+      <div class="versus-icon">💒</div>
+      <div class="fighter p2">
+        <div class="fighter-name">🌷 ${S.p2.name}</div>
+        <div class="fighter-kg">-${loss2.toFixed(1)}</div>
+        <div class="fighter-sub">kg 減少</div>
+        ${loss2>=3?'<div style="font-size:0.75rem;font-weight:800;color:var(--p2);margin-top:4px">🏆 達成目標！</div>':''}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🌸 ${S.p1.name} 里程碑</div>
+      <div class="milestone-row">${ms1}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🌷 ${S.p2.name} 里程碑</div>
+      <div class="milestone-row">${ms2}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 減重進度</div>
+      <div class="prog-wrap" style="margin-bottom:14px">
+        <div class="prog-label"><span style="color:var(--p1)">🌸 ${S.p1.name}</span><span>${loss1.toFixed(2)} / 3kg</span></div>
+        <div class="prog-track"><div class="prog-fill p1" style="width:${pct1}%"></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span style="color:var(--p2)">🌷 ${S.p2.name}</span><span>${loss2.toFixed(2)} / 3kg</span></div>
+        <div class="prog-track"><div class="prog-fill p2" style="width:${pct2}%"></div></div>
+      </div>
+      ${lead?`<div style="text-align:center;margin-top:12px;font-size:0.85rem;font-weight:800;color:var(--blush-deep)">🐾 ${lead} 目前領先！</div>`:`<div style="text-align:center;margin-top:12px;font-size:0.85rem;font-weight:800;color:var(--muted)">🤝 目前並駕齊驅！</div>`}
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v cg">第${dayN}天</div><div class="l">今天</div></div>
+      <div class="stat"><div class="v">${dLeft}</div><div class="l">剩餘天數</div></div>
+      <div class="stat c1"><div class="v">${Math.max(0,3-loss1).toFixed(1)}</div><div class="l">${S.p1.name} 還差</div></div>
+      <div class="stat c2"><div class="v">${Math.max(0,3-loss2).toFixed(1)}</div><div class="l">${S.p2.name} 還差</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 打卡記錄（🟢兩人都記錄 🟡只有一人）</div>
+      <div class="day-row">${dots}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🥊 作戰策略</div>
+      <div style="margin-bottom:8px"><span style="color:var(--p1);font-weight:800">🌸 ${S.p1.name}</span><span style="font-size:0.88rem;color:var(--muted);margin-left:8px">${S.p1.strategy}</span></div>
+      <div><span style="color:var(--p2);font-weight:800">🌷 ${S.p2.name}</span><span style="font-size:0.88rem;color:var(--muted);margin-left:8px">${S.p2.strategy}</span></div>
+      ${S.weighTime?`<div style="margin-top:10px;font-size:0.8rem;color:var(--sage);font-weight:700">⏰ 量體重時間：${S.weighTime}</div>`:''}
+    </div>
+  `;
+}
+function renderMSDots(p, loss) {
+  return MS.map(m => {
+    const reached = loss >= m.kg;
+    return `<div class="ms ${reached?(p===1?'reached':'p2-reached'):''}"><span class="ms-icon">${reached?m.icon:'○'}</span>${m.kg}kg</div>`;
+  }).join('');
+}
+function getLoss(p) {
+  const sw = p===1 ? S.p1.startWeight : S.p2.startWeight;
+  if (!sw) return 0;
+  const keys = Object.keys(S.logs).filter(k=>k.startsWith(`p${p}_`)).sort();
+  if (!keys.length) return 0;
+  const w = S.logs[keys[keys.length-1]].weight;
+  return w ? Math.max(0, sw - w) : 0;
+}
+function dateStr(dayN) {
+  const d = new Date(S.startDate); d.setDate(d.getDate()+dayN-1);
+  return d.toISOString().split('T')[0];
+}
+
+// ─── LOG ───
+let curLP = 1;
+function setLP(p) {
+  curLP = p;
+  document.getElementById('lb1').className = 'toggle-btn'+(p===1?' on-p1':'');
+  document.getElementById('lb2').className = 'toggle-btn'+(p===2?' on-p2':'');
+  refreshLog();
+}
+function initLog() {
+  document.getElementById('lDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ln1').textContent = S.p1.name;
+  document.getElementById('ln2').textContent = S.p2.name;
+  document.getElementById('weighReminder').textContent = S.weighTime ? `⏰ 固定量體重時間：${S.weighTime}` : '🐾 記得在固定時間量體重唷！';
+  refreshLog();
+}
+function refreshLog() {
+  const date = document.getElementById('lDate').value;
+  if (S.startDate && date) {
+    const d = Math.floor((new Date(date)-new Date(S.startDate))/86400000)+1;
+    document.getElementById('logDayBadge').textContent = (d>=1&&d<=10)?`📅 第 ${d} 天`:'⚠️ 不在挑戰期間';
+  }
+  const e = S.logs[`p${curLP}_${date}`]||{};
+  document.getElementById('lWt').value = e.weight||'';
+  document.getElementById('lBF').value = e.breakfast||'';
+  document.getElementById('lL').value = e.lunch||'';
+  document.getElementById('lD').value = e.dinner||'';
+  document.getElementById('lEx').value = e.exercise||'';
+  document.getElementById('lNote').value = e.note||'';
+}
+async function saveLog() {
+  const date = document.getElementById('lDate').value;
+  if (!date) { toast('請選擇日期！'); return; }
+  const weight = parseFloat(document.getElementById('lWt').value)||null;
+  const breakfast = document.getElementById('lBF').value;
+  const lunch = document.getElementById('lL').value;
+  const dinner = document.getElementById('lD').value;
+  const exercise = document.getElementById('lEx').value;
+  const note = document.getElementById('lNote').value;
+  const prevLoss = getLoss(curLP);
+  // Save locally immediately so UI updates
+  S.logs[`p${curLP}_${date}`] = { weight, breakfast, lunch, dinner, exercise, note };
+  saveLocal();
+  // Submit to Google Form (fire and forget)
+  submitToForm(`p${curLP}`, date, weight, breakfast, lunch, dinner, exercise, note);
+  const msgs = ['已儲存！禮服越來越合了 🌸','記錄成功！繼續保持 🐾','儲存完成！妳最棒了 💍','已記錄！不要偷吃哦 🐱'];
+  toast('✅ ' + msgs[Math.floor(Math.random()*msgs.length)]);
+  // Sync from sheet after short delay (give form time to process)
+  setTimeout(async () => {
+    await fetchSheetLogs();
+    const newLoss = getLoss(curLP);
+    checkMilestones(curLP, prevLoss, newLoss);
+  }, 3000);
+}
+
+// ─── MILESTONES ───
+function checkMilestones(p, prev, next) {
+  MS.forEach(m => {
+    const key = `p${p}_${m.kg}`;
+    if (next >= m.kg && prev < m.kg && !S.seenMS[key]) {
+      S.seenMS[key] = true; saveLocal();
+      setTimeout(() => showMS(m), 400);
+    }
+  });
+}
+function showMS(m) {
+  const pop = document.getElementById('msPopup');
+  document.getElementById('mpIcon').textContent = m.icon;
+  document.getElementById('mpTitle').textContent = m.title;
+  document.getElementById('mpSub').textContent = m.sub;
+  pop.classList.add('show');
+  if (m.color==='confetti') confetti(); else petalShower();
+  setTimeout(() => pop.classList.remove('show'), 4000);
+}
+
+// ─── HISTORY ───
+let curHP = 1;
+function setHP(p) {
+  curHP = p;
+  document.getElementById('hb1').className = 'toggle-btn'+(p===1?' on-p1':'');
+  document.getElementById('hb2').className = 'toggle-btn'+(p===2?' on-p2':'');
+  renderHist();
+}
+function renderHist() {
+  document.getElementById('hn1').textContent = S.p1.name;
+  document.getElementById('hn2').textContent = S.p2.name;
+  const el = document.getElementById('hist');
+  const sw = curHP===1 ? S.p1.startWeight : S.p2.startWeight;
+  const keys = Object.keys(S.logs).filter(k=>k.startsWith(`p${curHP}_`)).sort().reverse();
+  if (!keys.length) { el.innerHTML=`<div class="empty"><span class="empty-icon">🌸</span><p>還沒有記錄！</p></div>`; return; }
+  let html = '';
+  keys.forEach(k => {
+    const log = S.logs[k]; const ds = k.replace(`p${curHP}_`,'');
+    const dn = S.startDate ? Math.floor((new Date(ds)-new Date(S.startDate))/86400000)+1 : '?';
+    const diff = sw && log.weight ? (sw-log.weight) : null;
+    html += `<div class="log-item p${curHP}">
+      <div class="log-header">
+        <div class="log-day">第${dn}天・${ds}</div>
+        ${log.weight?`<div class="log-kg">${log.weight}kg ${diff!==null?`(${diff>0?'-':'+'} ${Math.abs(diff).toFixed(2)}kg)`:''}</div>`:''}
+      </div>
+      ${log.breakfast?`<div class="log-row">🌅 早餐：<b>${log.breakfast}</b></div>`:''}
+      ${log.lunch?`<div class="log-row">☀️ 午餐：<b>${log.lunch}</b></div>`:''}
+      ${log.dinner?`<div class="log-row">🌙 晚餐：<b>${log.dinner}</b></div>`:''}
+      ${log.exercise?`<div class="log-row">🏃 運動：<b>${log.exercise}</b></div>`:''}
+      ${log.note?`<div class="log-row">💬 備註：<b>${log.note}</b></div>`:''}
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ─── SETUP ───
+function initSetup() {
+  document.getElementById('sN1').value = S.p1.name !== '我' ? S.p1.name : '';
+  document.getElementById('sN2').value = S.p2.name !== '妹妹' ? S.p2.name : '';
+  document.getElementById('sW1').value = S.p1.startWeight||'';
+  document.getElementById('sW2').value = S.p2.startWeight||'';
+  document.getElementById('sSt1').value = S.p1.strategy;
+  document.getElementById('sSt2').value = S.p2.strategy;
+  document.getElementById('sDate').value = S.startDate||new Date().toISOString().split('T')[0];
+  if (S.weighTime) document.getElementById('sWeighTime').value = S.weighTime;
+  document.getElementById('sWeighTime').addEventListener('change', function(){
+    document.getElementById('customTimeGroup').style.display = this.value==='自訂時間'?'block':'none';
+  });
+}
+async function saveSetup() {
+  const sd = document.getElementById('sDate').value;
+  if (!sd) { toast('請選擇開始日期！'); return; }
+  S.p1.name = document.getElementById('sN1').value.trim()||'我';
+  S.p2.name = document.getElementById('sN2').value.trim()||'妹妹';
+  S.p1.startWeight = parseFloat(document.getElementById('sW1').value)||null;
+  S.p2.startWeight = parseFloat(document.getElementById('sW2').value)||null;
+  S.p1.strategy = document.getElementById('sSt1').value||S.p1.strategy;
+  S.p2.strategy = document.getElementById('sSt2').value||S.p2.strategy;
+  S.startDate = sd;
+  const wt = document.getElementById('sWeighTime').value;
+  S.weighTime = wt==='自訂時間' ? document.getElementById('sCustomTime').value : wt;
+  saveLocal();
+  startAutoSync();
+  toast('✅ 設定完成！挑戰開始！🐾');
+  setTimeout(() => go('dashboard'), 1000);
+}
+
+// ─── TOAST ───
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── FX ───
+function confetti() {
+  const wrap = document.getElementById('confettiWrap');
+  const colors = ['#F0C4C4','#D9879A','#C8972A','#F9EFD6','#8FAF8F','#7A9FBF','#EEF5EE','#FBF0F0'];
+  for (let i=0;i<90;i++) {
+    const p = document.createElement('div'); p.className='cp';
+    p.style.left = Math.random()*100+'%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.width = (6+Math.random()*8)+'px'; p.style.height = p.style.width;
+    p.style.animationDelay = Math.random()*1.5+'s';
+    p.style.animationDuration = (2.5+Math.random()*2)+'s';
+    p.style.borderRadius = Math.random()>.5?'50%':'3px';
+    wrap.appendChild(p); setTimeout(()=>p.remove(), 5000);
+  }
+}
+function petalShower() {
+  const wrap = document.getElementById('confettiWrap');
+  const petals = ['🌸','🌺','🌷','🌹','✿','🐾'];
+  for (let i=0;i<20;i++) {
+    const p = document.createElement('div');
+    p.style.cssText = `position:absolute;top:-20px;left:${Math.random()*100}%;font-size:${1+Math.random()}rem;animation:fall ${2+Math.random()*2}s ease-in ${Math.random()*1.2}s forwards;opacity:0`;
+    p.textContent = petals[Math.floor(Math.random()*petals.length)];
+    wrap.appendChild(p); setTimeout(()=>p.remove(), 4500);
+  }
+}
+
+// ─── INIT ───
+(async () => {
+  loadLocal();
+  if (GF.csvUrl) await fetchSheetLogs();
+  startAutoSync();
+  renderDB();
+  document.getElementById('lDate').value = new Date().toISOString().split('T')[0];
+  ['ln1','hn1'].forEach(id => document.getElementById(id).textContent = S.p1.name);
+  ['ln2','hn2'].forEach(id => document.getElementById(id).textContent = S.p2.name);
+})();
+</script>
+</body>
+</html>
